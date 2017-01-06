@@ -104,7 +104,8 @@ this.ckan.module('spatial-query', function ($, _) {
         weight: 2,
         opacity: 1,
         fillColor: '#F06F64',
-        fillOpacity: 0.1
+        fillOpacity: 0.1,
+        clickable: false
       },
       default_extent: [[90, 180], [-90, -180]],
       draw_default: false
@@ -195,16 +196,24 @@ this.ckan.module('spatial-query', function ($, _) {
       });
 
       // OK map time
-      map = ckan.commonLeafletMap('dataset-map-container', this.options.map_config, {attributionControl: false});
+      map = ckan.commonLeafletMap(
+        'dataset-map-container',
+        this.options.map_config,
+        {
+          attributionControl: false,
+          drawControlTooltips: false
+        }
+      );
 
       // Initialize the draw control
       map.addControl(new L.Control.Draw({
         position: 'topright',
-        polyline: false, polygon: false,
-        circle: false, marker: false,
-        rectangle: {
-          shapeOptions: module.options.style,
-          title: 'Draw rectangle'
+        draw: {
+          polyline: false,
+          polygon: false,
+          circle: false,
+          marker: false,
+          rectangle: {shapeOptions: module.options.style}
         }
       }));
       map.addControl(new L.Control.Arrow());
@@ -226,6 +235,15 @@ this.ckan.module('spatial-query', function ($, _) {
             }
             resetMap();
             is_exanded = true;
+          }
+      }
+
+      // OK add the expander
+      $('a.leaflet-draw-draw-rectangle', module.el).on('click', function(e) {
+        if (!is_exanded) {
+          $('body').addClass('dataset-map-expanded');
+          if (should_zoom && !extentLayer) {
+            map.zoomIn();
           }
       }
 
@@ -301,10 +319,10 @@ this.ckan.module('spatial-query', function ($, _) {
       });
 
       // When user finishes drawing the box, record it and add it to the map
-      map.on('draw:rectangle-created', function (e) {
+      map.on('draw:created', function (e) {
         bbox_preparations();
 
-        drawRect(e.rect);
+        drawRect(e.layer);
 
         var drawSelectedBtn = $('.extended-map-show-form a');
         if (drawSelectedBtn.hasClass('active')){
